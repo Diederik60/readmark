@@ -1,0 +1,87 @@
+/* Print styling: always light, no app chrome, sensible page breaks. */
+
+@media print {
+  :root:root {
+    color-scheme: light;
+    --bg: #ffffff;
+    --bg-subtle: #f6f8fa;
+    --fg: #000000;
+    --fg-muted: #444c56;
+    --border: #c8d0d8;
+    --border-muted: #dde3e9;
+    --link: #0a5bd6;
+    --code-bg: #f6f8fa;
+    --inline-code-bg: rgba(129, 139, 152, 0.15);
+    --hl-keyword: #cf222e;
+    --hl-title: #8250df;
+    --hl-string: #0a3069;
+    --hl-number: #0550ae;
+    --hl-comment: #6e7781;
+    --hl-variable: #953800;
+    --hl-tag: #116329;
+    --hl-addition-bg: #dafbe1;
+    --hl-deletion-bg: #ffebe9;
+  }
+
+  @page {
+    margin: 18mm 16mm;
+  }
+
+  html,
+  body {
+    height: auto;
+    overflow: visible;
+    background: #fff;
+  }
+  body {
+    display: block;
+  }
+
+  .toolbar,
+  .drop-overlay,
+  .status,
+  .copy-button,
+  .welcome {
+    display: none !important;
+  }
+
+  .viewport {
+    overflow: visible;
+  }
+
+  .markdown-body {
+    max-width: none;
+    padding: 0;
+    font-size: 11pt;
+    line-height: 1.5;
+  }
+
+  .markdown-body :is(h1, h2, h3, h4, h5, h6) {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+  .markdown-body :is(pre, blockquote, table, figure, img, .mermaid-block, .katex-display, tr) {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .markdown-body pre,
+  .markdown-body pre code {
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .markdown-body table {
+    display: table;
+    width: auto;
+  }
+  .markdown-body a {
+    color: var(--fg);
+    text-decoration: underline;
+    text-decoration-color: var(--border);
+  }
+  .mermaid-light {
+    display: block !important;
+  }
+  .mermaid-dark {
+    display: none !important;
+  }
+}

@@ -1,0 +1,269 @@
+/* Typography for rendered Markdown. */
+
+.markdown-body {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 32px 40px 80px;
+  font-size: 16px;
+  line-height: 1.65;
+  word-wrap: break-word;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+@media (max-width: 600px) {
+  .markdown-body {
+    padding: 20px 16px 60px;
+  }
+}
+
+.markdown-body > :first-child {
+  margin-top: 0 !important;
+}
+
+.markdown-body :is(p, blockquote, ul, ol, dl, table, pre, details, .code-wrapper, .mermaid-block, .katex-display) {
+  margin-top: 0;
+  margin-bottom: 1em;
+}
+
+.markdown-body :is(h1, h2, h3, h4, h5, h6) {
+  margin: 1.6em 0 0.6em;
+  font-weight: 650;
+  line-height: 1.25;
+  scroll-margin-top: 16px;
+}
+.markdown-body h1 {
+  font-size: 2em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--border-muted);
+}
+.markdown-body h2 {
+  font-size: 1.5em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--border-muted);
+}
+.markdown-body h3 {
+  font-size: 1.25em;
+}
+.markdown-body h4 {
+  font-size: 1em;
+}
+.markdown-body h5 {
+  font-size: 0.875em;
+}
+.markdown-body h6 {
+  font-size: 0.85em;
+  color: var(--fg-muted);
+}
+
+.markdown-body a {
+  color: var(--link);
+  text-decoration: none;
+}
+.markdown-body a:hover {
+  text-decoration: underline;
+}
+
+.markdown-body strong {
+  font-weight: 650;
+}
+
+.markdown-body hr {
+  height: 2px;
+  margin: 2em 0;
+  border: 0;
+  background: var(--border-muted);
+}
+
+.markdown-body :is(ul, ol) {
+  padding-left: 2em;
+}
+.markdown-body li + li {
+  margin-top: 0.25em;
+}
+.markdown-body li > :is(ul, ol) {
+  margin-top: 0.25em;
+  margin-bottom: 0;
+}
+
+.markdown-body .task-list-item {
+  list-style: none;
+}
+.markdown-body .task-list-item input[type="checkbox"] {
+  margin: 0 0.4em 0.2em -1.5em;
+  vertical-align: middle;
+  accent-color: var(--accent);
+}
+.markdown-body .contains-task-list {
+  padding-left: 2em;
+}
+
+.markdown-body blockquote {
+  margin-left: 0;
+  margin-right: 0;
+  padding: 0 1em;
+  color: var(--fg-muted);
+  border-left: 0.25em solid var(--border);
+}
+
+.markdown-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+
+/* Tables */
+.markdown-body table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow: auto;
+  border-collapse: collapse;
+  border-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+.markdown-body :is(th, td) {
+  padding: 6px 13px;
+  border: 1px solid var(--border);
+}
+.markdown-body th {
+  font-weight: 600;
+  background: var(--bg-subtle);
+}
+.markdown-body tr:nth-child(2n) td {
+  background: color-mix(in srgb, var(--bg-subtle) 60%, transparent);
+}
+
+/* Code */
+.markdown-body code,
+.markdown-body kbd,
+.markdown-body pre {
+  font-family: var(--font-mono);
+}
+.markdown-body :not(pre) > code {
+  padding: 0.15em 0.4em;
+  font-size: 0.86em;
+  border-radius: 6px;
+  background: var(--inline-code-bg);
+}
+
+.code-wrapper {
+  position: relative;
+}
+.markdown-body pre {
+  margin: 0;
+  padding: 14px 16px;
+  overflow: auto;
+  font-size: 0.85em;
+  line-height: 1.5;
+  border-radius: 8px;
+  background: var(--code-bg);
+  border: 1px solid var(--border-muted);
+  tab-size: 4;
+}
+.markdown-body pre code {
+  padding: 0;
+  background: none;
+  white-space: pre;
+}
+
+.copy-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  font: inherit;
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--fg-muted);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.code-wrapper:hover .copy-button,
+.copy-button:focus-visible,
+.copy-button.copied {
+  opacity: 1;
+}
+.copy-button:hover {
+  color: var(--fg);
+}
+.copy-button.copied {
+  color: var(--success);
+  border-color: var(--success);
+}
+
+/* Footnotes */
+.markdown-body .footnotes {
+  font-size: 0.875em;
+  color: var(--fg-muted);
+}
+.markdown-body .footnotes-sep {
+  margin-top: 3em;
+}
+.markdown-body .footnote-ref a {
+  font-size: 0.8em;
+}
+
+/* Math */
+.markdown-body .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.25em 0;
+}
+.markdown-body .katex {
+  font-size: 1.08em;
+}
+
+/* Mermaid */
+.mermaid-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-x: auto;
+}
+.mermaid-block svg {
+  max-width: 100%;
+  height: auto;
+}
+.mermaid-source {
+  width: 100%;
+  color: var(--fg-muted);
+}
+.mermaid-dark {
+  display: none;
+}
+@media screen and (prefers-color-scheme: dark) {
+  .mermaid-light {
+    display: none;
+  }
+  .mermaid-dark {
+    display: block;
+  }
+}
+
+.render-error {
+  width: 100%;
+  margin-bottom: 0.5em;
+  padding: 8px 12px;
+  font-size: 0.85em;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  border-radius: 6px;
+}
+
+.markdown-body details {
+  padding: 0.5em 1em;
+  border: 1px solid var(--border-muted);
+  border-radius: 8px;
+}
+.markdown-body summary {
+  cursor: pointer;
+  font-weight: 600;
+}
