@@ -30,7 +30,7 @@ const controller = new DocumentController(
   showStatus,
 );
 
-function openPaths(paths) {
+async function openPaths(paths) {
   // Single document window: open the last supported file in the list.
   const supported = (paths ?? []).filter((p) => viewerFor(extname(p)));
   if (supported.length) controller.open(supported[supported.length - 1]);
@@ -52,19 +52,51 @@ $("open-shortcut").textContent = openLabel;
 document.querySelectorAll(".open-shortcut-text").forEach((el) => (el.textContent = openLabel));
 document.documentElement.classList.toggle("platform-mac", isMac);
 
-$("open-button").addEventListener("click", pickAndOpen);
+$("open-button").addEventListener("click", () => pickAndOpen());
 
-// Keyboard shortcuts. On macOS the native menu owns Cmd+O / Cmd+P.
+// Commands, triggered by the macOS menu or by keyboard shortcuts elsewhere.
+const commands = {
+  open: pickAndOpen,
+  save: async () => {
+    if (controller.viewer && !controller.viewer.save) showStatus("Nothing to save");
+    else await controller.save();
+  },
+  "save-as": async () => {
+    if (controller.viewer && !controller.viewer.saveAs) showStatus("Save As is available for PDF files");
+    else await controller.saveAs();
+  },
+  print: () => {
+    if (!controller.command("print")) window.print();
+  },
+  find: () => controller.command("find"),
+  "zoom-in": () => controller.command("zoom-in"),
+  "zoom-out": () => controller.command("zoom-out"),
+  "zoom-fit": () => controller.command("zoom-fit"),
+  quit: async () => {
+    if (await controller.confirmDiscard()) await backend.quit();
+  },
+};
+
+// Keyboard shortcuts. On macOS the native menu owns these accelerators.
+const SHORTCUTS = {
+  o: "open",
+  s: "save",
+  S: "save-as",
+  p: "print",
+  f: "find",
+  "=": "zoom-in",
+  "+": "zoom-in",
+  "-": "zoom-out",
+  0: "zoom-fit",
+};
 document.addEventListener("keydown", (event) => {
-  if (isMac || !primaryModifier(event) || event.shiftKey || event.altKey) return;
-  const key = event.key.toLowerCase();
-  if (key === "o") {
-    event.preventDefault();
-    pickAndOpen();
-  } else if (key === "p") {
-    event.preventDefault();
-    window.print();
-  }
+  if (isMac || !primaryModifier(event) || event.altKey) return;
+  let key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+  if (event.shiftKey && key === "s") key = "S";
+  const name = SHORTCUTS[key];
+  if (!name) return;
+  event.preventDefault();
+  commands[name]();
 });
 
 // Drag and drop (Tauri delivers real file paths).
@@ -94,8 +126,11 @@ async function init() {
   await Promise.all([
     backend.onOpenFiles(openPaths),
     backend.onFileChanged(() => controller.fileChanged()),
-    backend.onMenu("open", pickAndOpen),
-    backend.onMenu("print", () => window.print()),
+    ...Object.entries(commands).map(([name, run]) => backend.onMenu(name, run)),
+    // Unsaved changes: ask before the window closes.
+    backend.onCloseRequested(async (event) => {
+      if (!(await controller.confirmDiscard())) event.preventDefault();
+    }),
   ]);
   // Only after listeners exist: fetch files requested at launch.
   openPaths(await backend.frontendReady());

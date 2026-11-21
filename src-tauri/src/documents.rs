@@ -122,3 +122,76 @@ pub fn read_text_file(path: String) -> Result<Document, String> {
         content,
     })
 }
+
+/// Read a file as raw bytes (returned to JS as an ArrayBuffer, without JSON
+/// encoding, so large PDFs stay fast).
+#[tauri::command]
+pub fn read_binary_file(path: String) -> Result<tauri::ipc::Response, String> {
+    let bytes = std::fs::read(&path).map_err(|e| format!("Could not read {path}: {e}"))?;
+    Ok(tauri::ipc::Response::new(bytes))
+}
+
+/// Write raw bytes to a file. The bytes are the request body; the target path
+/// is passed URL-encoded in the `path` header. The file is written to a
+/// temporary file in the same folder first and then renamed over the target,
+/// so a crash mid-write never leaves a half-written document behind.
+#[tauri::command]
+pub fn write_binary_file(request: tauri::ipc::Request<'_>) -> Result<(), String> {
+    let tauri::ipc::InvokeBody::Raw(data) = request.body() else {
+        return Err("Expected raw bytes".into());
+    };
+    let encoded = request
+        .headers()
+        .get("path")
+        .and_then(|v| v.to_str().ok())
+        .ok_or("Missing path header")?;
+    let path = percent_encoding::percent_decode_str(encoded)
+        .decode_utf8()
+        .map_err(|e| e.to_string())?
+        .into_owned();
+    let path = PathBuf::from(path);
+    let dir = path.parent().ok_or("Invalid path")?;
+    let file_name = path.file_name().ok_or("Invalid path")?.to_string_lossy();
+    let tmp = dir.join(format!(".{file_name}.readmark-tmp"));
+
+    std::fs::write(&tmp, data).map_err(|e| format!("Could not write {}: {e}", tmp.display()))?;
+    if let Ok(meta) = std::fs::metadata(&path) {
+        let _ = std::fs::set_permissions(&tmp, meta.permissions());
+    }
+    std::fs::rename(&tmp, &path).map_err(|e| {
+        let _ = std::fs::remove_file(&tmp);
+        format!("Could not save {}: {e}", path.display())
+    })
+}
+
+/// Copy `name.ext` to `name.backup.ext` next to it, unless that backup
+/// already exists (the oldest backup — the original file — is kept).
+/// Returns the backup path.
+#[tauri::command]
+pub fn backup_file(path: String) -> Result<String, String> {
+    let path = PathBuf::from(path);
+    let stem = path.file_stem().ok_or("Invalid path")?.to_string_lossy();
+    let backup_name = match path.extension() {
+        Some(ext) => format!("{stem}.backup.{}", ext.to_string_lossy()),
+        None => format!("{stem}.backup"),
+    };
+    let backup = path.with_file_name(backup_name);
+    if !backup.exists() {
+        std::fs::copy(&path, &backup).map_err(|e| format!("Could not create backup: {e}"))?;
+    }
+    Ok(backup.to_string_lossy().into_owned())
+}
+
+/// Name used as the author of new annotations.
+#[tauri::command]
+pub fn user_name() -> String {
+    std::env::var("USER")
+        .or_else(|_| std::env::var("USERNAME"))
+        .unwrap_or_default()
+}
+
+/// Quit the app (after the frontend has dealt with unsaved changes).
+#[tauri::command]
+pub fn quit_app(app: AppHandle) {
+    app.exit(0);
+}

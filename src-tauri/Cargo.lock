@@ -2959,6 +2959,7 @@ name = "readmark"
 version = "0.1.0"
 dependencies = [
  "notify",
+ "percent-encoding",
  "serde",
  "serde_json",
  "tauri",

@@ -1,10 +1,10 @@
 # Readmark
 
-A lightweight desktop Markdown viewer for macOS (Apple Silicon) and Windows, built with [Tauri v2](https://tauri.app) and plain HTML, CSS and JavaScript.
+A lightweight desktop Markdown viewer and PDF annotator for macOS (Apple Silicon) and Windows, built with [Tauri v2](https://tauri.app) and plain HTML, CSS and JavaScript.
 
-Open `sample.md` in Readmark to see every supported feature.
+Open `sample.md` to see every Markdown feature. Open `sample.pdf` to try the PDF tools.
 
-## Features
+## Markdown features
 
 - GitHub flavored Markdown: tables, task lists, footnotes, strikethrough, autolinks
 - LaTeX math with KaTeX: `$inline$` and `$$display$$`
@@ -19,6 +19,39 @@ Open `sample.md` in Readmark to see every supported feature.
 - Print: <kbd>Cmd+P</kbd> / <kbd>Ctrl+P</kbd>
 - Native macOS menu bar: About, Open, Print, Close Window, Quit, Edit and Window menus
 - Works fully offline: every library is bundled into the app, with no CDNs
+
+## PDF features
+
+- Open PDFs the same ways as Markdown: double click (file association), drag and drop, the **Open** button, or <kbd>Cmd/Ctrl+O</kbd>
+- Rendering with [pdf.js](https://mozilla.github.io/pdf.js/), bundled locally, including character maps, standard fonts and decoders
+- Smooth scrolling, a page number box, and next/previous page buttons
+- Zoom: <kbd>Cmd/Ctrl +</kbd>, <kbd>Cmd/Ctrl −</kbd>, <kbd>Cmd/Ctrl 0</kbd> for fit to width, pinch or Ctrl+scroll, and the toolbar buttons. Fit to width keeps fitting when the window or panels resize
+- A page thumbnail sidebar
+- Text search: <kbd>Cmd/Ctrl+F</kbd>. <kbd>Enter</kbd> goes to the next match, <kbd>Shift+Enter</kbd> to the previous one, and <kbd>Esc</kbd> closes the bar
+- **Highlights**
+  - Select text and pick yellow, green, blue or pink from the bar that appears, or from the toolbar.
+  - Click a highlight to change its color, add a comment, or remove it.
+- **Comments**
+  - Use **Comment** in the selection bar to highlight text and comment on it in one step.
+  - Click a highlight to add or edit its comment.
+  - Highlights that have a comment show a small marker.
+- **Sticky notes**
+  - Click the note tool, then click anywhere on a page.
+  - Notes can be dragged to move them, edited and deleted. A new note left empty is discarded.
+- **Comments panel**
+  - Lists every highlight and note in reading order, with the page number, the highlighted text and the comment.
+  - Click an entry to jump to it, double click to edit it.
+  - Edit and delete buttons appear on hover.
+  - With an annotation selected, <kbd>Delete</kbd> or <kbd>Backspace</kbd> removes it.
+- **Saving into the PDF:** <kbd>Cmd/Ctrl+S</kbd>. Annotations are written as standard PDF Highlight and Text (sticky note) annotations with Popup annotations, so they appear in macOS Preview, Adobe Acrobat, Microsoft Edge and other readers.
+- **Backup:** before the first save of a file, Readmark copies the original to `name.backup.pdf` next to it. An existing backup is never overwritten, so it always holds the oldest version.
+- **Save As:** <kbd>Cmd/Ctrl+Shift+S</kbd> writes an annotated copy and continues editing that copy.
+- **Existing annotations:** highlights and notes made in Preview, Acrobat, Edge and similar apps are loaded, shown in the panel, and can be edited or deleted.
+- **Unsaved changes:**
+  - Closing the window, quitting (Cmd+Q) or opening another file asks you to Save, Don't Save or Cancel.
+  - The title bar shows `•` while there are unsaved changes.
+- **Protected work:** while there are unsaved annotations, a change to the file on disk does **not** reload the view. If you then save, Readmark asks before overwriting the other app's version.
+- **Dark mode:** the interface follows the system theme. PDF pages are always shown as they are, never inverted.
 
 ## Prerequisites
 
@@ -72,6 +105,8 @@ npm run tauri build
 
 Copy `Readmark.app` to `/Applications`. Then right click any `.md` file, choose **Get Info → Open with: Readmark → Change All…** to make Readmark the default viewer.
 
+Readmark registers itself for PDFs as an *alternate* app, so Preview stays the default. To use Readmark for a file, choose **Open With → Readmark**, or use **Get Info → Change All…** for every PDF.
+
 The build isn't code signed or notarized. On a different Mac, Gatekeeper will block it the first time: right click the app and choose **Open**, or run `xattr -cr /Applications/Readmark.app`. To sign, set `bundle.macOS.signingIdentity` and see the [Tauri signing docs](https://tauri.app/distribute/sign/macos/).
 
 ### Windows output
@@ -82,45 +117,51 @@ Run the same commands on a Windows PC:
 | --- | --- |
 | Installer | `src-tauri\target\release\bundle\nsis\Readmark_<version>_x64-setup.exe` |
 
-The installer registers `.md` and `.markdown` with Readmark. Windows may still ask you to confirm the default app the first time you open a Markdown file.
+The installer registers `.md`, `.markdown` and `.pdf` with Readmark. Windows keeps your current default app if you already chose one, so you may need **Open with → Choose another app** to pick Readmark.
 
 ## Project structure
 
 ```
 index.html                  App shell (toolbar, welcome screen, document area)
 src/
-  main.js                   Wiring: open button, shortcuts, drag and drop, OS events
+  main.js                   Wiring: commands, shortcuts, drag and drop, OS events, close guard
   backend.js                The only module that calls Tauri APIs
-  documents.js              DocumentController: open, reload on change, window title
+  documents.js              DocumentController: open, reload on change, unsaved-change guard, title
   links.js                  Link click handling (browser / in-app / anchors)
   paths.js, platform.js     Small helpers (POSIX and Windows paths, Cmd vs Ctrl)
   viewers/
-    index.js                Viewer registry, keyed by file extension
+    index.js                Viewer registry and the viewer interface
     markdown/               Markdown viewer: renderer, sanitizing, Mermaid, enhancements
-  styles/                   base (chrome + theme), markdown, highlight, print
+    pdf/
+      index.js              Lazy entry (pdf.js and pdf-lib load only when a PDF is opened)
+      viewer.js             The PDF viewer: layout, pdf.js setup, tools, save
+      pdfjs.js              pdf.js configuration (worker, local assets)
+      thumbnails.js, search.js
+      annotations/
+        model.js            Annotation model and store (dirty tracking)
+        pdf-io.js           Read/write standard PDF annotations with pdf-lib
+        geometry.js         Screen <-> PDF coordinates, text selection -> rects
+        overlay.js          Draws highlights and notes over the pages
+        popover.js          Selection bar and annotation editor
+        panel.js            Comments panel
+  styles/                   base, markdown, highlight, print, pdf
 src-tauri/
   src/lib.rs                App setup, plugins, macOS RunEvent::Opened / Reopen
-  src/documents.rs          Queues files opened by the OS until the UI is ready; read_text_file
+  src/documents.rs          Open queue, file read/write (atomic), backups, quit
   src/watcher.rs            File watching (notify) -> "file-changed" event
   src/menu.rs               macOS menu bar
   tauri.conf.json           Shared config: file associations, CSP, bundle settings
   tauri.macos.conf.json     macOS bundle targets (app, dmg)
   tauri.windows.conf.json   Windows bundle target (nsis)
   capabilities/default.json Permissions granted to the window
+scripts/make-sample-pdf.mjs Regenerates sample.pdf
 assets/icon.svg             Source for the app icons
-sample.md                   Feature demo
+sample.md, sample.pdf       Feature demos
 ```
 
-### Adding PDF viewing later
+### Adding another document type
 
-Rendering lives in the frontend viewers. To add PDFs:
-
-1. Create `src/viewers/pdf/index.js` that exports a viewer object `{ id, label, extensions: ["pdf"], render(container, path, ctx), dispose() }`, for example built on `pdfjs-dist`. Bundle the PDF.js worker locally.
-2. Register it in `src/viewers/index.js`. The open dialog filters and drag and drop pick it up automatically.
-3. In Rust, add a `read_binary_file` command next to `read_text_file` in `documents.rs`, or load the PDF through `backend.fileUrl(path)`, since the asset protocol is already enabled.
-4. Add `"pdf"` to `bundle.fileAssociations` in `tauri.conf.json`.
-
-Annotations can be stored in a sidecar file, such as `document.pdf.readmark.json`, with a new Rust command to write it.
+Create `src/viewers/<type>/index.js` that exports `{ id, label, extensions, create() }` and register it in `src/viewers/index.js`. The comment at the top of that file describes the interface. The open dialog filters and drag and drop pick up the new type automatically. Then add the extension to `bundle.fileAssociations`.
 
 ### Regenerating icons
 
@@ -133,7 +174,7 @@ rm -rf src-tauri/icons/android src-tauri/icons/ios   # desktop only
 
 These are choices I made without asking. Change any of them freely.
 
-- **Vite as the bundler.** The code is plain JavaScript with no framework. Vite resolves the npm libraries and bundles them, KaTeX fonts included, into `dist/`, so the app has no runtime network dependencies. Mermaid (about 3 MB) is loaded only when a document contains a diagram.
+- **Vite as the bundler.** The code is plain JavaScript with no framework. Vite resolves the npm libraries and bundles them, KaTeX fonts included, into `dist/`, so the app has no runtime network dependencies. Mermaid (about 3 MB) is loaded only when a document contains a diagram, and pdf.js and pdf-lib only when a PDF is opened. `vite.config.js` copies pdf.js's runtime assets into `public/pdfjs/`.
 - **markdown-it** renders the Markdown, using `markdown-it-footnote`, `markdown-it-task-lists` and `@vscode/markdown-it-katex` (the KaTeX plugin VS Code uses). An npm `overrides` entry forces every package onto one patched KaTeX version.
 - **Raw HTML in Markdown is allowed**, then sanitized with DOMPurify. `<script>`, `<style>`, `<iframe>`, forms and event handlers are removed. Mermaid runs in `strict` security mode, and its SVG output is also passed through DOMPurify.
 - **One document per window.** Opening a file replaces the current one. On Windows, the single instance plugin forwards a second launch's file to the running window.
@@ -143,6 +184,19 @@ These are choices I made without asking. Change any of them freely.
 - **Asset protocol scope is `**`.** Images next to any document can load. The scope is broad, but this is a local, read-only viewer. The CSP also allows remote `https:` images, which is common in READMEs; remove `https:` from `img-src` in `tauri.conf.json` if you want strictly offline rendering.
 - **Mermaid diagrams are rendered twice**, in light and dark themes, and CSS shows the one that matches. Theme changes switch instantly, and printing always uses the light version.
 - **The Windows installer is per-user** (`installMode: currentUser`), so it doesn't need administrator rights.
+- **PDF annotations are drawn by Readmark, not by pdf.js.**
+  - On load, pdf-lib moves Highlight, Text and their Popup annotations out of the PDF into Readmark's annotation model. The copy pdf.js renders has them removed, so they aren't drawn twice.
+  - On save, those annotations are written back.
+  - All other annotation types (links, underlines, ink, form fields and so on) are left untouched.
+  - Edited annotations are rewritten in a normalized form. Rich text formatting in comments, and Acrobat reply threads, are flattened into the plain comment text.
+- **Saving rewrites the whole PDF** using pdf-lib, not an incremental update. The file is written to a temporary file first and then renamed over the original.
+  - A digital signature on the PDF becomes invalid when you save annotations.
+  - Encrypted or password-protected PDFs can be viewed (except password-protected ones), but not annotated.
+- **Highlight appearance:** each highlight gets an appearance stream (filled rectangles with multiply blending), so readers that don't generate their own still show it with the text readable.
+- **The pdf.js legacy build** is used so the app keeps working on older macOS versions, where the system WebKit is older.
+- **Printing PDFs isn't supported yet.** Cmd/Ctrl+P on a PDF shows a hint to print from Preview or another reader instead.
+- **Annotation author** is your OS user name (`$USER` / `%USERNAME%`).
+- **Save As** continues editing the new copy, as most document apps do.
 - **Bundle identifier** is `com.readmark.viewer`. Change it before distributing.
 - **Code signing** is not set up on either platform.
 
@@ -151,3 +205,8 @@ These are choices I made without asking. Change any of them freely.
 - macOS: Finder sends files through `RunEvent::Opened`, both at launch and while the app is running. Command line arguments also work: `Readmark.app/Contents/MacOS/readmark file.md`.
 - Windows: Explorer passes the file as a command line argument. `tauri-plugin-single-instance` is registered first, so a second launch hands its arguments to the running instance and exits. Relative paths are resolved against the second instance's working directory.
 - I compiled the Windows code paths on macOS during development by temporarily enabling the single instance plugin there, but I haven't run them on Windows yet.
+- Shortcuts on Windows are handled in the webview (Ctrl+O/S/Shift+S/P/F/+/−/0). On macOS they are native menu items (File, Edit → Find, View → Zoom).
+
+## Testing PDF annotations
+
+`sample.pdf` has three pages of text. Search for "marginalia" to jump to the last page. To regenerate it, run `node scripts/make-sample-pdf.mjs`.

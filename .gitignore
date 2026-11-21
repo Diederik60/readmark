@@ -21,3 +21,6 @@ desktop.ini
 # Logs
 npm-debug.log*
 *.log
+
+# Copied from node_modules by vite.config.js
+public/pdfjs/

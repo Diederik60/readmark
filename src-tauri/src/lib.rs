@@ -3,8 +3,7 @@
 //! The backend is intentionally small and viewer-agnostic: it delivers file
 //! paths to the frontend, reads files, and watches them for changes. Rendering
 //! happens in the frontend, where each document type has its own viewer
-//! (see `src/viewers/`). A future PDF viewer can reuse the same plumbing and
-//! add e.g. a `read_binary_file` command next to `read_text_file`.
+//! (see `src/viewers/`): Markdown and PDF (with annotations).
 
 mod documents;
 mod menu;
@@ -46,6 +45,11 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             documents::frontend_ready,
             documents::read_text_file,
+            documents::read_binary_file,
+            documents::write_binary_file,
+            documents::backup_file,
+            documents::user_name,
+            documents::quit_app,
             watcher::watch_file,
             watcher::unwatch_file,
         ])

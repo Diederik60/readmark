@@ -204,3 +204,20 @@ kbd {
 [hidden] {
   display: none !important;
 }
+
+/* Stateful viewers (PDF) fill the viewport and manage their own scrolling. */
+.viewport {
+  position: relative;
+}
+.viewport[data-viewer="pdf"] {
+  overflow: hidden;
+}
+.viewport[data-viewer="pdf"] > .document {
+  position: absolute;
+  inset: 0;
+}
+
+.file-name.dirty::before {
+  content: "● ";
+  color: var(--accent);
+}

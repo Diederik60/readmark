@@ -25,23 +25,30 @@
     "security": {
       "csp": {
         "default-src": "'self'",
-        "script-src": "'self'",
+        "script-src": "'self' 'wasm-unsafe-eval'",
         "style-src": "'self' 'unsafe-inline'",
         "font-src": "'self' data:",
         "img-src": "'self' data: blob: asset: http://asset.localhost https:",
-        "connect-src": "ipc: http://ipc.localhost",
+        "connect-src": "'self' ipc: http://ipc.localhost",
         "object-src": "'none'",
-        "frame-src": "'none'"
+        "frame-src": "'none'",
+        "worker-src": "'self' blob:"
       },
       "assetProtocol": {
         "enable": true,
-        "scope": ["**"]
+        "scope": [
+          "**"
+        ]
       }
     }
   },
   "bundle": {
     "active": true,
-    "targets": ["app", "dmg", "nsis"],
+    "targets": [
+      "app",
+      "dmg",
+      "nsis"
+    ],
     "category": "Productivity",
     "shortDescription": "Lightweight Markdown viewer",
     "longDescription": "Readmark is a lightweight, offline Markdown viewer with GitHub flavored Markdown, math, diagrams and syntax highlighting.",
@@ -54,11 +61,28 @@
     ],
     "fileAssociations": [
       {
-        "ext": ["md", "markdown"],
+        "ext": [
+          "md",
+          "markdown"
+        ],
         "name": "Markdown Document",
         "description": "Markdown Document",
         "role": "Viewer",
-        "contentTypes": ["net.daringfireball.markdown"]
+        "contentTypes": [
+          "net.daringfireball.markdown"
+        ]
+      },
+      {
+        "ext": [
+          "pdf"
+        ],
+        "name": "PDF Document",
+        "description": "PDF Document",
+        "role": "Editor",
+        "rank": "Alternate",
+        "contentTypes": [
+          "com.adobe.pdf"
+        ]
       }
     ],
     "macOS": {
