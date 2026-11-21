@@ -53,6 +53,15 @@ Open `sample.md` to see every Markdown feature. Open `sample.pdf` to try the PDF
 - **Protected work:** while there are unsaved annotations, a change to the file on disk does **not** reload the view. If you then save, Readmark asks before overwriting the other app's version.
 - **Dark mode:** the interface follows the system theme. PDF pages are always shown as they are, never inverted.
 
+## Download
+
+Ready-made installers for macOS (Apple Silicon and Intel) and Windows are on the [Releases page](https://github.com/Diederik60/readmark/releases). The app isn't signed with a paid certificate yet:
+
+- **macOS:** the first time you open it, go to **System Settings → Privacy & Security** and click **Open Anyway**.
+- **Windows:** if SmartScreen appears, click **More info → Run anyway**.
+
+To build it yourself, see below.
+
 ## Prerequisites
 
 Both platforms need:
@@ -162,6 +171,16 @@ sample.md, sample.pdf       Feature demos
 ### Adding another document type
 
 Create `src/viewers/<type>/index.js` that exports `{ id, label, extensions, create() }` and register it in `src/viewers/index.js`. The comment at the top of that file describes the interface. The open dialog filters and drag and drop pick up the new type automatically. Then add the extension to `bundle.fileAssociations`.
+
+### Releases
+
+`.github/workflows/release.yml` builds the macOS (Apple Silicon and Intel) and Windows installers on GitHub's servers and attaches them to a draft release. To make a release:
+
+1. Set the new version in `package.json`, `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`, then commit and push.
+2. Tag the commit and push the tag: `git tag v0.2.0 && git push origin v0.2.0`. The workflow checks that the tag matches the version.
+3. When the builds finish (see the **Actions** tab), review the draft under **Releases** and click **Publish release**.
+
+macOS builds are ad-hoc signed (`signingIdentity: "-"`). Without a signature, a downloaded app shows up as "damaged" on Apple Silicon; with ad-hoc signing, users get the normal "unidentified developer" warning instead. Proper signing and notarization need an Apple Developer account.
 
 ### Regenerating icons
 
