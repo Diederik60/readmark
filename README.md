@@ -210,3 +210,7 @@ These are choices I made without asking. Change any of them freely.
 ## Testing PDF annotations
 
 `sample.pdf` has three pages of text. Search for "marginalia" to jump to the last page. To regenerate it, run `node scripts/make-sample-pdf.mjs`.
+
+## License
+
+[MIT](LICENSE). Bundled libraries keep their own licenses: pdf.js (Apache 2.0), highlight.js (BSD 3-Clause), DOMPurify (MPL 2.0 or Apache 2.0), and pdf-lib, markdown-it, KaTeX and Mermaid (MIT).
